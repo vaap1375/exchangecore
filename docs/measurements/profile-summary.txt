@@ -1,0 +1,37 @@
+macOS sample: 2026-10-29, Apple M1 Max, Release
+Command: python3 scripts/profile_macos.py
+Workload: deep, 200000 events, 100 trials; sampling duration 3 s, interval 1 ms
+Observed main-thread stacks: 2464
+Includes preparation, invariants, snapshots and teardown outside throughput timing.
+Counts are profiler top-of-stack observations, not isolated matching CPU percentages.
+Local raw profile: build/profile-sample.txt (ignored generated artifact).
+
+Sort by top of stack, same collapsed (when >= 5):
+_xzm_free  (in libsystem_malloc.dylib)        311
+        std::__tree_balance_after_insert[abi:nqe220106]<std::__tree_node_base<void*>*>(std::__tree_node_base<void*>*, std::__tree_node_base<void*>*)  (in exchangecore_bench)        248
+        exchangecore::OrderBook::add(exchangecore::RestingOrder const&)  (in exchangecore_bench)        233
+        _xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib)        229
+        exchangecore::OrderBook::check_invariants() const::$_0::operator()(std::map<long long, exchangecore::OrderBook::PriceLevel> const&, exchangecore::Side) const  (in exchangecore_bench)        138
+        exchangecore::OrderBook::snapshot() const  (in exchangecore_bench)        128
+        _malloc_zone_malloc  (in libsystem_malloc.dylib)        118
+        exchangecore::MatchingEngine::submit(exchangecore::Order const&)  (in exchangecore_bench)        113
+        std::__tree<std::__value_type<long long, exchangecore::OrderBook::PriceLevel>, std::__map_value_compare<long long, std::pair<long long const, exchangecore::OrderBook::PriceLevel>>>::__tree_deleter::operator()[abi:nqe220106](std::__tree_node<std::__value_type<long long, exchangecore::OrderBook::PriceLevel>, void*>*)  (in exchangecore_bench)        102
+        _free  (in libsystem_malloc.dylib)        91
+        exchangecore::(anonymous namespace)::state_checksum(exchangecore::MatchingEngine const&)  (in exchangecore_bench)        83
+        <deduplicated_symbol>  (in libsystem_malloc.dylib)        72
+        _tlv_get_addr  (in libdyld.dylib)        69
+        std::vector<exchangecore::RestingOrder>::__insert_with_size[abi:nqe220106]<std::_ClassicAlgPolicy, std::__list_const_iterator<exchangecore::RestingOrder, void*>, std::__list_const_iterator<exchangecore::RestingOrder, void*>>(std::__wrap_iter<exchangecore::RestingOrder const*>, std::__list_const_iterator<exchangecore::RestingOrder, void*>, std::__list_const_iterator<exchangecore::RestingOrder, void*>, long)  (in exchangecore_bench)        68
+        _platform_memset  (in libsystem_platform.dylib)        65
+        <deduplicated_symbol>  (in exchangecore_bench)        56
+        _xzm_xzone_malloc  (in libsystem_malloc.dylib)        55
+        exchangecore::MatchingEngine::check_invariants() const  (in exchangecore_bench)        50
+        (anonymous namespace)::allocate(unsigned long)  (in exchangecore_bench)        49
+        DYLD-STUB$$free  (in exchangecore_bench)        35
+        std::__hash_table<std::__hash_value_type<unsigned long long, exchangecore::OrderBook::Location>>::__emplace_unique[abi:nqe220106]<unsigned long long const&, exchangecore::OrderBook::Location>(unsigned long long const&, exchangecore::OrderBook::Location&&)::'lambda'(unsigned long long const&, unsigned long long const&, exchangecore::OrderBook::Location&&)::operator()(unsigned long long const&, unsigned long long const&, exchangecore::OrderBook::Location&&) const  (in exchangecore_bench)        28
+        exchangecore::run_benchmarks(exchangecore::BenchmarkOptions const&, std::basic_ostream<char>&)  (in exchangecore_bench)        24
+        std::__hash_table<unsigned long long>::__emplace_unique[abi:nqe220106]<unsigned long long const&>(unsigned long long const&)::'lambda'(unsigned long long const&, unsigned long long const&)::operator()(unsigned long long const&, unsigned long long const&) const  (in exchangecore_bench)        23
+        exchangecore::MatchingEngine::validate(exchangecore::Order const&) const  (in exchangecore_bench)        18
+        DYLD-STUB$$malloc  (in exchangecore_bench)        17
+        mach_absolute_time  (in libsystem_kernel.dylib)        12
+        DYLD-STUB$$_platform_bzero  (in libsystem_malloc.dylib)        9
+        __bzero  (in libsystem_platform.dylib)        9

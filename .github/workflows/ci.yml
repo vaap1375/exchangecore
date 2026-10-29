@@ -1,0 +1,46 @@
+name: C++ correctness and performance smoke
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        preset: [debug, release]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install cmake ninja
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }} --parallel 2
+      - name: Test
+        run: ctest --preset ${{ matrix.preset }}
+      - name: CLI and benchmark smoke
+        run: |
+          build/${{ matrix.preset }}/exchangecore demo
+          build/${{ matrix.preset }}/exchangecore validate examples/orders.csv
+          build/${{ matrix.preset }}/exchangecore replay examples/mixed.csv
+          build/${{ matrix.preset }}/exchangecore_bench --events 1000 --trials 1 --warmup 0 --samples 100
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install cmake ninja
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: cmake --preset sanitize
+      - run: cmake --build --preset sanitize --parallel 2
+      - run: ctest --preset sanitize
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1

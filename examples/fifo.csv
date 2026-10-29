@@ -1,0 +1,4 @@
+type,id,side,quantity,price
+LIMIT,1,SELL,5,24001
+LIMIT,2,SELL,5,24001
+LIMIT,3,BUY,7,24001

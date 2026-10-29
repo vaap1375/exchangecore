@@ -1,0 +1,15 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {"major": 3, "minor": 21, "patch": 0},
+  "configurePresets": [
+    {"name": "debug", "generator": "Ninja", "binaryDir": "${sourceDir}/build/debug", "cacheVariables": {"CMAKE_BUILD_TYPE": "Debug", "BUILD_TESTING": "ON", "EXCHANGECORE_ENABLE_INVARIANTS": "ON"}},
+    {"name": "release", "generator": "Ninja", "binaryDir": "${sourceDir}/build/release", "cacheVariables": {"CMAKE_BUILD_TYPE": "Release", "BUILD_TESTING": "ON", "EXCHANGECORE_ENABLE_INVARIANTS": "OFF"}},
+    {"name": "sanitize", "inherits": "debug", "binaryDir": "${sourceDir}/build/sanitize", "cacheVariables": {"EXCHANGECORE_SANITIZERS": "ON"}}
+  ],
+  "buildPresets": [{"name": "debug", "configurePreset": "debug"}, {"name": "release", "configurePreset": "release"}, {"name": "sanitize", "configurePreset": "sanitize"}],
+  "testPresets": [
+    {"name": "debug", "configurePreset": "debug", "output": {"outputOnFailure": true}},
+    {"name": "release", "configurePreset": "release", "output": {"outputOnFailure": true}},
+    {"name": "sanitize", "configurePreset": "sanitize", "output": {"outputOnFailure": true}, "environment": {"UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1", "ASAN_OPTIONS": "halt_on_error=1"}}
+  ]
+}

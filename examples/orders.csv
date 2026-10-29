@@ -1,0 +1,11 @@
+# Deterministic demonstration: exact integer ticks (24001 = 6000.25).
+type,id,side,quantity,price
+LIMIT,1,SELL,10,24001
+LIMIT,2,SELL,5,24001
+LIMIT,3,SELL,8,24002
+LIMIT,4,BUY,4,24001
+LIMIT,5,BUY,9,24001
+LIMIT,6,BUY,7,24002
+LIMIT,7,BUY,6,23999
+CANCEL,7,,,
+LIMIT,8,BUY,3,24000

@@ -1,0 +1,15 @@
+/build*/
+/.venv/
+/benchmark-results/
+/test-failures/
+*.o
+*.a
+*.dSYM/
+*.profraw
+*.profdata
+*.gcda
+*.gcno
+.DS_Store
+*.swp
+*~
+.cache/
