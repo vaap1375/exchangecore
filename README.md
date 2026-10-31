@@ -2,8 +2,9 @@
 
 A deterministic C++20 limit-order matching engine with price-time priority,
 indexed cancellation, an independent reference model, allocation-failure tests,
-and reproducible performance experiments. A reusable systems library and CLI;
-no external services or real-market connectivity.
+and reproducible performance experiments. A reusable systems library and CLI,
+plus an optional POSIX TCP gateway with bounded queues and a dedicated matching
+thread. No external services or real-market connectivity.
 
 The project focuses on a small, difficult problem: maintain exact quantities and
 stable FIFO priority while orders cross multiple levels, fills remove nodes,
@@ -14,7 +15,8 @@ must preserve state.
 
 Requires a C++20 compiler, CMake 3.21+ for presets, and Ninja. macOS and Linux
 are supported targets. No third-party C++ dependencies or downloads at configure
-time. Python 3 is optional for black-box CLI tests.
+time. Python 3 is optional for black-box CLI tests; the network demo and benchmark
+tools require Python 3.10+.
 
 ```sh
 # Optional local tooling, if CMake/Ninja are missing:
@@ -32,6 +34,54 @@ build/release/exchangecore --help
 
 Without Ninja/presets: `cmake -S . -B build/local -DCMAKE_BUILD_TYPE=Release`,
 then `cmake --build build/local` and `ctest --test-dir build/local --output-on-failure`.
+
+## Optional TCP order entry
+
+```sh
+# Automatic two-client demonstration; starts an ephemeral loopback server:
+python3 scripts/network_demo.py
+
+# Or start a server, then use a second terminal:
+build/release/exchangecore_gateway --host 127.0.0.1 --port 9000
+python3 scripts/network_client.py --port 9000 --command 'LIMIT 1 SELL 10 24001' --command BEST
+python3 scripts/network_client.py --port 9000 --command 'MARKET 2 BUY 4' --command BEST
+# Ctrl-C gracefully stops admission, drains matching, then flushes replies.
+
+# Separate end-to-end loopback benchmarks:
+python3 benchmarks/network_benchmark.py --clients 1,4,8,16 --workloads ping,matching,cancellation --trials 3
+```
+
+`EC1` is a bounded line protocol with request IDs, explicit processing sequences,
+LIMIT/MARKET/CANCEL, BEST and PING. One nonblocking `poll()` thread owns every
+socket; a dedicated writer owns the original matching engine. Bounded request
+and completion queues, per-client pending limits and incremental response
+streaming constrain memory. Full queues reject with `OVERLOADED`; slow clients
+have reads paused. A successful queue admission receives no acknowledgment until
+processing completes. Accepted work continues after disconnect, with generation
+tokens preventing replies from reaching a reused connection.
+
+This simulated gateway defaults to IPv4 loopback. It has no TLS, authentication,
+per-client order ownership or durable journal and is not a secure public endpoint.
+Concurrent network arrival order can differ between runs; a recorded processing
+sequence replays deterministically. See [wire protocol](docs/NETWORK_PROTOCOL.md)
+and [ownership/backpressure](docs/CONCURRENCY.md).
+
+Disable all gateway targets with `-DEXCHANGECORE_BUILD_GATEWAY=OFF`. The installed
+core library and original CLI have no networking-thread dependency or added locks
+in the matching path.
+
+Local verification passed all 12 CTest groups on macOS Debug/Release/ASan+UBSan/
+TSan and Linux GCC Debug/Release plus Clang ASan+UBSan+LeakSanitizer. The 13-case
+TCP suite also passed ten consecutive repetitions. Hosted CI remains unrun.
+Linux verification uses Clang for sanitizers because GCC's instrumented reference
+tests exceeded their deadlines; that limitation is documented.
+
+On Apple M1 Max, the 2026-10-31 four-client matching audit measured **39,970 completed
+TCP requests/s**, with **781/1,138/1,310 µs p50/p95/p99 RTT**, at pipeline depth
+eight per client. This includes Python client, socket, parsing and scheduling
+costs; it is separate from core engine throughput. See
+[latest verification and measurements](docs/VERIFICATION_2026-10-31.md) and
+[TCP methodology, overload and memory evidence](docs/NETWORK_PERFORMANCE.md).
 
 ## Matching behavior
 
@@ -117,6 +167,11 @@ ctest --preset sanitize
 
 # Debug + Release + ASan/UBSan, examples and benchmark smoke:
 scripts/verify.sh
+
+# Includes TCP integration, TSan, and ten repeated concurrent stress runs:
+scripts/verify_network.sh
+# Optional local Docker Linux compatibility and leak checks:
+scripts/verify_linux.sh
 ```
 
 The dependency-free suite covers matching rules, lifecycle, arithmetic boundaries,
@@ -170,7 +225,7 @@ Small-book improvements did not consistently reproduce; reservation remains opt-
 ## Scope and limitations
 
 The engine intentionally has one serialized writer, one book, no venue-specific
-order types, no modify/replace, no fees, no network feed or durable event journal.
+order types, no modify/replace, no fees, no real market feed or durable event journal.
 It is an educational systems project, not a production trading venue. Read-only
 snapshots are copied and require caller serialization. CSV replay is bounded and
 loaded before execution. Aggregate quantity validation is conservative at integer

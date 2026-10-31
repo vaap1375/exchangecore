@@ -30,7 +30,7 @@ jobs:
           build/${{ matrix.preset }}/exchangecore replay examples/mixed.csv
           build/${{ matrix.preset }}/exchangecore_bench --events 1000 --trials 1 --warmup 0 --samples 100
   sanitizers:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools
@@ -38,9 +38,28 @@ jobs:
           python3 -m venv .venv
           .venv/bin/python -m pip install cmake ninja
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - name: Install Clang sanitizer runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libclang-rt-18-dev
       - run: cmake --preset sanitize
+        env:
+          CC: clang
+          CXX: clang++
       - run: cmake --build --preset sanitize --parallel 2
       - run: ctest --preset sanitize
         env:
           ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+  thread-sanitizer:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install cmake ninja
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: cmake --preset thread-sanitize
+      - run: cmake --build --preset thread-sanitize --parallel 2
+      - run: ctest --preset thread-sanitize -R 'network_|bounded_queue'

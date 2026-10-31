@@ -160,6 +160,23 @@ disabled allocation-counter branch still has a cost; both configurations use
 that same binary. Full per-trial raw rates are summarized as min/median/max/CV,
 not retained individually in CSV. See [methodology](../benchmarks/README.md).
 
-No CPU pinning, Linux comparison, hardware-counter analysis, production traffic
+In this original core experiment, no CPU pinning, Linux performance comparison,
+hardware-counter analysis, production traffic
 trace or end-to-end exchange test was performed. Reproduce on the target machine
 before transferring performance claims.
+
+## Optional TCP gateway upgrade
+
+The original measurements above remain preserved. The gateway uses separate
+targets and leaves core matching and benchmark source unchanged. Fresh core
+before/after measurements, TCP scaling at 1/4/8/16 clients, a separate overload
+experiment, RTT percentiles and memory/queue observations are documented in
+[NETWORK_PERFORMANCE.md](NETWORK_PERFORMANCE.md). End-to-end Python/TCP rates
+must not be substituted for the in-process engine numbers above. Linux
+Debug/Release and Clang ASan/UBSan/LeakSanitizer compatibility verification are
+now recorded in `IMPLEMENTATION_STATUS.md`; Linux performance is not measured.
+
+The [2026-10-31 audit](VERIFICATION_2026-10-31.md) repeats both suites with the
+updated compiler. Baseline and current core benchmark executables are identical
+in that build; both process orders and the observed timing spread are preserved
+without attributing the differences to a code change.

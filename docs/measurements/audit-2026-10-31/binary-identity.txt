@@ -1,0 +1,11 @@
+Local audit: 2026-10-31
+Compiler: Apple Clang 21.0.0 (clang-2100.4.1.1), Release -O3 -DNDEBUG
+Baseline source: git archive b9d0f24, exported without Git metadata
+Baseline executable: build/baseline-audit-build-2026-10-31/exchangecore_bench
+Current executable: build/audit-2026-10-31/release/exchangecore_bench
+SHA-256 for both complete executable files: 2c6b73b9a654a98f323926ae9707516526685ea557004aaa852885d109f3ad3d
+
+The two independently built core benchmark executables are byte-for-byte identical.
+Core benchmark process timing differences therefore do not come from different
+benchmark executable code. Runtime conditions, ASLR and scheduling are not controlled.
+The digest identifies these local audit artifacts, not a universal build hash.

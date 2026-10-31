@@ -1,8 +1,9 @@
 # Architecture
 
-ExchangeCore is a single-threaded, deterministic C++20 library. The CLI, CSV
-parser and benchmark runner use the same public engine API. There are no network
-connections, background workers, databases, wall-clock ordering or trading strategies.
+ExchangeCore's core is a single-threaded, deterministic C++20 library. The CLI,
+CSV parser and benchmark runner use the same public engine API. The optional TCP
+gateway adds one socket-I/O owner and one matching owner around that unchanged
+API. There are no databases, wall-clock matching priorities or trading strategies.
 
 ```mermaid
 flowchart LR
@@ -47,3 +48,41 @@ and keeps result delivery from allocating after liquidity has already changed.
 
 The installed target is `ExchangeCore::exchangecore`. The public API does not
 depend on Python, a test framework, or the benchmark executable.
+
+## Optional gateway boundary
+
+```mermaid
+flowchart LR
+    Clients[Concurrent TCP clients] --> IO[poll I/O owner: bounded framing]
+    IO --> Admission[Validate ID and assign admission sequence]
+    Admission --> Queue[Bounded request FIFO: mutex and condition variable]
+    Queue --> Writer[Dedicated writer: unchanged MatchingEngine]
+    Writer --> Replies[Bounded completion FIFO]
+    Replies --> Routes[Connection generation and ordered response slots]
+    Routes --> IO
+    IO --> Clients
+```
+
+The I/O thread owns socket descriptors, buffers, monotonic connection tokens and
+per-connection response slots. It parses requests and admits them into a bounded
+FIFO, assigning a global processing sequence only on successful insertion. The
+matching thread owns the engine and serially processes every admitted command,
+including BEST/PING, before publishing results. Locks protect queue operations;
+matching and socket calls execute outside those locks.
+
+Completion values move across the boundary. They contain a connection token,
+request ID, sequence and copied results, never a socket pointer or borrowed book
+iterator. Disconnect destroys the socket while queued work continues. The I/O
+owner discards an unroutable completion and cannot confuse it with a later
+connection that reuses the same OS descriptor.
+
+Per-connection response slots retain response order even for immediate seq0
+errors. Large trade vectors stream as individual bounded lines through the fixed
+output buffer. Input reads pause at output/pending limits; the shared request
+queue uses explicit overload rejection. The core's lifetime-ID capacity bounds
+engine state as well as preventing accidental order reuse across reconnects.
+
+SIGINT/SIGTERM set a lock-free atomic flag. The I/O owner closes admission and
+the request queue, continues draining completions while the writer drains accepted
+work, then allows a response grace period. Slow clients cannot hold the writer
+at join. See `CONCURRENCY.md` for detailed bounds and shutdown/error contracts.

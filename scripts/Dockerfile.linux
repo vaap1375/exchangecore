@@ -1,0 +1,6 @@
+# Local compatibility tests only; no service deployment or publication.
+FROM ubuntu:24.04
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends g++ clang libclang-rt-18-dev cmake ninja-build python3 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /work

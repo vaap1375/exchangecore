@@ -1,0 +1,2 @@
+# The toolchain image does not copy project files. Sources are mounted at runtime.
+**
